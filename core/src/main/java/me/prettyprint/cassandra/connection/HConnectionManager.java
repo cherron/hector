@@ -265,12 +265,15 @@ public class HConnectionManager {
           monitor.incCounter(Counter.RECOVERABLE_TRANSPORT_EXCEPTIONS);
 
         } else if (he instanceof HTimedOutException ) {
-          // DO NOT drecrement retries, we will be keep retrying on timeouts until it comes back
-          // if HLT.checkTimeout(cassandraHost): suspendHost(cassandraHost);
+          if(op.failoverPolicy.numRetries == 0) {
+            // Honor the failover policy if it explicitly requests zero retries
+            retryable = false;
+          } else {
+            // DO NOT drecrement retries, we will be keep retrying on timeouts until it comes back
+            // if HLT.checkTimeout(cassandraHost): suspendHost(cassandraHost);
+            retryable = true;
+          }
           doTimeoutCheck(pool.getCassandraHost());
-
-          retryable = true;
-
           monitor.incCounter(Counter.RECOVERABLE_TIMED_OUT_EXCEPTIONS);
           client.close();
           // TODO timecheck on how long we've been waiting on timeouts here
